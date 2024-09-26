@@ -20,15 +20,19 @@ const getRequestBody = (req) => {
   });
 };
 
+
+
 // Validate book data
-const validateBook = (book) => {
+const validateBook = (book, isPartialUpdate = false) => {
   const requiredFields = ['title', 'author', 'publisher', 'publishedDate', 'isbn'];
-  for (let field of requiredFields) {
-    if (!book[field]) {
-      return `${field} is required`;
+  if (!isPartialUpdate) {
+    for (let field of requiredFields) {
+      if (!book[field]) {
+        return `${field} is required`;
+      }
     }
   }
-  if (isNaN(book.isbn)) {
+  if (book.isbn !== undefined && isNaN(book.isbn)) {
     return 'ISBN must be a valid number';
   }
   return null;
@@ -59,7 +63,6 @@ const handleGet = (req, res) => {
   }
 };
 
-
 // Handle POST requests
 const handlePost = async (req, res) => {
   if (req.url === '/books') {
@@ -85,6 +88,39 @@ const handlePost = async (req, res) => {
 };
 
 
+// Handle PUT requests
+const handlePut = async (req, res) => {
+  const parts = req.url.split('/');
+  if (parts[1] === 'books' && parts.length === 3) {
+    const isbn = parts[2];
+    const index = books.findIndex(b => b.isbn === isbn);
+    if (index !== -1) {
+      try {
+        const updatedFields = await getRequestBody(req);
+        const validationError = validateBook(updatedFields, true);
+        if (validationError) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: validationError }));
+          return;
+        }
+        books[index] = { ...books[index], ...updatedFields };
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(books[index]));
+      } catch (error) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      }
+    } else {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Book not found' }));
+    }
+  } else {
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'Not found' }));
+  }
+};
+
+
 
 // Create the server
 const server = http.createServer((req, res) => {
@@ -94,6 +130,9 @@ const server = http.createServer((req, res) => {
       break;
     case 'POST':
       handlePost(req, res);
+      break;
+    case 'PUT':
+      handlePut(req, res);
       break;
     default:
       res.writeHead(405, { 'Content-Type': 'application/json' });
