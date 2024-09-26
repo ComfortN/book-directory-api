@@ -134,6 +134,9 @@ const server = http.createServer((req, res) => {
     case 'PUT':
       handlePut(req, res);
       break;
+    case 'DELETE':
+      handleDelete(req, res);
+      break;
     default:
       res.writeHead(405, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'Method not allowed' }));
