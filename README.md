@@ -12,7 +12,7 @@ This is a simple RESTful API for managing a book directory. It's built with Node
 
 ## Prerequisites
 
-- Node.js (version 12.0 or higher recommended)
+- Node.js
 
 ## Installation
 
